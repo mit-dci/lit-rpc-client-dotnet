@@ -25,8 +25,12 @@ namespace Mit.Dci.Lit
         private CancellationTokenSource _receiveCancellation;
         private ListeningStatus _listeningStatus;
 
-
-        public LitClient(string host, int port) {
+        /// <summary>
+        /// Creates a new client talking to a LIT instance
+        /// </summary>       
+        /// <param name="host">The host to connect to (default: localhost)</param>
+        /// <param name="port">The port number to connect to (default: 8001)</param>
+        public LitClient(string host = "localhost", int port = 8001) {
             _litUri = new Uri(string.Format("ws://{0}:{1}/ws", host, port));
             _websocket = new ClientWebSocket();
             _websocket.Options.SetRequestHeader("Origin", "http://localhost/");
@@ -34,12 +38,18 @@ namespace Mit.Dci.Lit
             _receiveCancellation = new CancellationTokenSource();
         }
 
+        /// <summary>
+        /// Opens the connection to LIT
+        /// </summary>     
         public async Task Connect() {
 
             await _websocket.ConnectAsync(_litUri, CancellationToken.None);
             RestartReceiveLoop();
         }
 
+        /// <summary>
+        /// Closes the connection to LIT
+        /// </summary>     
         public async Task Disconnect() {
             await _websocket.CloseAsync(WebSocketCloseStatus.Empty, string.Empty, CancellationToken.None);
             if(_receiveCancellation != null) { 
