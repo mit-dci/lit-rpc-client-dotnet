@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Mit.Dci.Lit.LitClient</PackageId>
+    <Version>1.0.2</Version>
+    <Authors>Gert-Jaap Glasbergen</Authors>
+    <Company>MIT Digital Currency Initiative</Company>
   </PropertyGroup>
 
   <ItemGroup>
