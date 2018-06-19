@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json;
 
 namespace Mit.Dci.Lit
 {
@@ -23,7 +24,7 @@ namespace Mit.Dci.Lit
     }
 
     public class CoinArgs {
-        public int CoinType { get; set;}
+        public UInt32 CoinType { get; set;}
     }
 
     public class ConnectArgs {
@@ -37,7 +38,7 @@ namespace Mit.Dci.Lit
         /**
         * The (unique) peer number for this peer
         */
-        public int PeerNumber { get; set;}
+        public UInt32 PeerNumber { get; set;}
         /**
         * The remote endpoint we connected to
         */
@@ -54,17 +55,17 @@ namespace Mit.Dci.Lit
     }
 
     public class AssignNicknameArgs {
-        public int Peer { get; set;}
+        public UInt32 Peer { get; set;}
         public string Nickname { get; set;}
     }
 
     public class CoinBalReply {
-        public int CoinType { get; set;}
-        public int SyncHeight { get; set;}
-        public int ChanTotal { get; set;}
-        public int TxoTotal { get; set;}
-        public int MatureWitty { get; set;}
-        public int FeeRate { get; set;}
+        public UInt32 CoinType { get; set;}
+        public long SyncHeight { get; set;}
+        public long ChanTotal { get; set;}
+        public long TxoTotal { get; set;}
+        public long MatureWitty { get; set;}
+        public long FeeRate { get; set;}
     }
 
     public class BalanceReply {
@@ -73,9 +74,9 @@ namespace Mit.Dci.Lit
 
     public class TxoInfo  {
         public string OutPoint { get; set; }
-        public int Am { get; set; } 
-        public int Height { get; set; } 
-        public int Delay { get; set; } 
+        public long Am { get; set; } 
+        public long Height { get; set; } 
+        public long Delay { get; set; } 
         public string CoinType { get; set; } 
         public bool Witty { get; set; } 
         public string KeyPath { get; set; } 
@@ -91,11 +92,11 @@ namespace Mit.Dci.Lit
 
     public class  SetFeeArgs {
         public long Fee { get; set; } 
-        public int CoinType { get; set; } 
+        public UInt32 CoinType { get; set; } 
     }
 
     public class GetFeeArgs {
-        public int CoinType { get; set; } 
+        public UInt32 CoinType { get; set; } 
     }
     public class FeeReply {
         public int CurrentFee { get; set; } 
@@ -103,7 +104,7 @@ namespace Mit.Dci.Lit
 
     public class AddressArgs {
         public int NumToMake { get; set; } 
-        public int CoinType { get; set; } 
+        public UInt32 CoinType { get; set; } 
     }
 
     public class AddressReply {
@@ -113,7 +114,7 @@ namespace Mit.Dci.Lit
 
     public class ChannelInfo {
         public string OutPoint { get; set; }   
-        public int CoinType { get; set; }   
+        public UInt32 CoinType { get; set; }   
         public bool Closed { get; set; }   
         public long Capacity { get; set; }   
         public long MyBalance { get; set; }   
@@ -121,8 +122,10 @@ namespace Mit.Dci.Lit
         public long StateNum { get; set; }    
         public int PeerIdx { get; set; }   
         public int CIdx { get; set; }   
-        public string PeerID { get; set; }   
+        public string PeerID { get; set; } 
+        [JsonConverter(typeof(ByteArrayConverter))] 
         public byte[] Data { get; set; }  
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] Pkh { get; set; }   
     }
 
@@ -133,18 +136,23 @@ namespace Mit.Dci.Lit
     // ------------------------- fund
     public class FundArgs {
         public int Peer { get; set; } 
-        public int CoinType { get; set; } 
+        public UInt32 CoinType { get; set; } 
         public long Capacity { get; set; } 
         public long Roundup { get; set; } 
         public long InitialSend { get; set; } 
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] Data { get; set; } 
     }
 
     public class JusticeTx {
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] Sig { get; set; }   
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] Txid { get; set; }   
         public long Amt { get; set; }   
-        public byte[] Data { get; set; }  
+        [JsonConverter(typeof(ByteArrayConverter))]
+        public byte[] Data { get; set; } 
+        [JsonConverter(typeof(ByteArrayConverter))] 
         public byte[] Pkh { get; set; }  
         public int Idx { get; set; }   
     }
@@ -156,6 +164,7 @@ namespace Mit.Dci.Lit
     public class PushArgs {
         public int ChanIdx { get; set; }
         public long Amt { get; set; } 
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] Data  { get; set; }
     }
     public class PushReply {
@@ -175,6 +184,7 @@ namespace Mit.Dci.Lit
         /**
         * Public key of the oracle
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] A { get; set; }  
         
         /**
@@ -236,14 +246,16 @@ namespace Mit.Dci.Lit
         /**
         * Coin type
         */
-        public int CoinType { get; set; } 
+        public UInt32 CoinType { get; set; } 
         /**
         * Pub key of the oracle used in the contract
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] OracleA { get; set; } 
         /**
         * Pub key of the R point (one-time signing key) used in the contract
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] OracleR { get; set; }
         /**
         * Time of expected settlement
@@ -310,14 +322,16 @@ namespace Mit.Dci.Lit
         /**
         * Coin type
         */
-        public int CoinType { get; set; } 
+        public UInt32 CoinType { get; set; } 
         /**
         * Pub key of the oracle used in the contract
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] OracleA { get; set; } 
         /**
         * Pub key of the R point (one-time signing key) used in the contract
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] OracleR { get; set; } 
         /** 
         * The time we expect the oracle to publish
@@ -338,34 +352,42 @@ namespace Mit.Dci.Lit
         /**
         * PKH to which our part of the contracts funding change should go
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] OurChangePKH { get; set; } 
         /**
         * PKH to which the counter party's part of the contracts funding change should go
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] TheirChangePKH { get; set; } 
         /**
         * Our Pubkey used in the funding multisig output
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[]  OurFundMultisigPub { get; set; } 
         /**
         * Counter party's pubkey used in the funding multisig output
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] TheirFundMultisigPub { get; set; } 
         /**
         * Our pubkey to be used in the commit script (combined with oracle pubkey or CSV timeout)
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] OurPayoutBase { get; set; } 
         /**
         * Our pubkey to be used in the commit script (combined with oracle pubkey or CSV timeout)
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] TheirPayoutBase { get; set; } 
         /**
         * Our Pubkeyhash to which the contract pays out (directly)
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] OurPayoutPKH { get; set; } 
         /**
         * Counterparty's Pubkeyhash to which the contract pays out (directly)
         */  
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] TheirPayoutPKH { get; set; } 
         /**
         * Status of the contract
@@ -406,6 +428,7 @@ namespace Mit.Dci.Lit
     }
 
     public class OutPoint {
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] Hash { get; set; } 	
         public long Index { get; set; } 
     }
@@ -418,6 +441,7 @@ namespace Mit.Dci.Lit
         /**
         * The signature for the transaction
         */
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] Signature { get; set; } 
     }
 
@@ -466,12 +490,15 @@ namespace Mit.Dci.Lit
     public class SettleContractArgs {
         public int CIdx { get; set; } 
         public long OracleValue { get; set; } 
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] OracleSig { get; set; } 
     }
 
     public class SettleContractReply {
         public bool Success { get; set; }   
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] SettleTxHash { get; set; } 
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] ClaimTxHash { get; set; } 
     }
 
@@ -489,7 +516,7 @@ namespace Mit.Dci.Lit
 
     public class SetContractCoinTypeArgs {
         public int CIdx { get; set; } 
-        public int CoinType { get; set; }
+        public UInt32 CoinType { get; set; }
     }
 
     public class SetContractSettlementTimeArgs {
@@ -499,6 +526,7 @@ namespace Mit.Dci.Lit
 
     public class SetContractRPointArgs {
         public int CIdx { get; set; } 
+        [JsonConverter(typeof(ByteArrayConverter))]
         public byte[] RPoint { get; set; } 
     }
 

@@ -41,7 +41,7 @@ namespace Mit.Dci.Lit
         /// <summary>
         /// Opens the connection to LIT
         /// </summary>     
-        public async Task Connect() {
+        public async Task Open() {
 
             await _websocket.ConnectAsync(_litUri, CancellationToken.None);
             RestartReceiveLoop();
@@ -50,7 +50,7 @@ namespace Mit.Dci.Lit
         /// <summary>
         /// Closes the connection to LIT
         /// </summary>     
-        public async Task Disconnect() {
+        public async Task Close() {
             await _websocket.CloseAsync(WebSocketCloseStatus.Empty, string.Empty, CancellationToken.None);
             if(_receiveCancellation != null) { 
                 _receiveCancellation.Cancel();
@@ -67,13 +67,18 @@ namespace Mit.Dci.Lit
             var args = new ListenArgs() { 
                 Port = string.Format(":{0}", port) 
             };
+            Task<ListeningPortsReply> task;
             try
             {
                 await Call<ListenArgs,ListeningPortsReply>("LitRPC.Listen", args);
                 _listeningStatus = ListeningStatus.Listening;
             } catch (Exception ex) {
                 // check if it is "already listening" error, then ignore.
-                throw ex;
+                if(ex.Message.Contains("already in use")) {
+                    _listeningStatus = ListeningStatus.Listening;
+                } else {
+                    throw ex;
+                }
             }
         }
 
@@ -136,7 +141,7 @@ namespace Mit.Dci.Lit
         /// </summary>  
         /// <param name="peerIndex">Numeric index of the peer</param>
         /// <param name="nickName">Nickname to assign</param>
-        public async Task AssignNickname(int peerIndex, string nickName) {
+        public async Task AssignNickname(UInt32 peerIndex, string nickName) {
             var args = new AssignNicknameArgs() {
                 Peer = peerIndex,
                 Nickname = nickName
@@ -201,7 +206,7 @@ namespace Mit.Dci.Lit
         /// </summary>  
         /// <param name="coinType">Numeric coin type</param>
         /// <param name="feePerByte">The amount of satoshi per byte to use as fee</param>
-        public async Task SetFee(int coinType, long feePerByte) {
+        public async Task SetFee(UInt32 coinType, long feePerByte) {
             var args = new SetFeeArgs() { 
                 CoinType = coinType, 
                 Fee = feePerByte 
@@ -214,7 +219,7 @@ namespace Mit.Dci.Lit
         /// Allows you to retrieve the fee rate for a particular coin type
         /// </summary>  
         /// <param name="coinType">Numeric coin type</param>
-        public async Task<long> GetFee(int coinType) {
+        public async Task<long> GetFee(UInt32 coinType) {
             var args = new GetFeeArgs() { 
                 CoinType = coinType
             };
@@ -229,7 +234,7 @@ namespace Mit.Dci.Lit
         /// <param name="numberToMake">The number of new addresses to make. Passing 0 will return all known addresses</param>
         /// <param name="legacy">Return legacy addresses (default: false)</param>
         /// <returns>A string array with the generated or retrieved addresses</returns>
-        public async Task<string[]> GetAddresses(int coinType, int numberToMake = 0, bool legacy = false)
+        public async Task<string[]> GetAddresses(UInt32 coinType, int numberToMake = 0, bool legacy = false)
         {
             var args = new AddressArgs() { 
                 CoinType = coinType,
@@ -260,7 +265,7 @@ namespace Mit.Dci.Lit
         /// <param name="amount">Amount (in satoshi) to fund the channel with</param>
         /// <param name="initialSend">Send this amount over to the peer upon funding</param>
         /// <param name="data">Arbitrary data to attach to the initial channel state. Can be used for referencing payments</param>
-        public async Task FundChannel(int peerIndex, int coinType, long amount, long initialSend, byte[] data)
+        public async Task FundChannel(int peerIndex, UInt32 coinType, long amount, long initialSend, byte[] data)
         {
             var args = new FundArgs() {
                 Peer = peerIndex,
@@ -353,12 +358,12 @@ namespace Mit.Dci.Lit
         /// <summary>
         /// Adds a new oracle by specifying its public key
         /// </summary>  
-        /// <param name="pubKeyHex">The public key of the oracle, 33 bytes hex</param>
+        /// <param name="pubKeyHex">The public key of the oracle, 33 bytes</param>
         /// <param name="name">The display name to give the oracle</param>
-        public async Task<DlcOracle> AddOracle(string pubKeyHex, string name) {
+        public async Task<DlcOracle> AddOracle(byte[] pubKey, string name) {
             var args = new AddOracleArgs() {
                 Name = name,
-                Key = pubKeyHex
+                Key = ByteArrayToString(pubKey)
             };
             var reply = await Call<AddOracleArgs,AddOrImportOracleReply>("LitRPC.AddOracle", args);
             if(reply.Oracle == null) throw new ApplicationException("Unexpected reply from server");
@@ -530,7 +535,7 @@ namespace Mit.Dci.Lit
         /// </summary>
         /// <param name="contractIndex">The index of the contract to specify the cointype for</param>
         /// <param name="coinType">The coin type to use for the contract</param>
-        public async Task SetContractCoinType(int contractIndex, int coinType) {
+        public async Task SetContractCoinType(int contractIndex, UInt32 coinType) {
             var args = new SetContractCoinTypeArgs() {
                 CIdx = contractIndex,
                 CoinType = coinType
@@ -644,13 +649,25 @@ namespace Mit.Dci.Lit
                             Console.WriteLine("Type: {0}<{1}>", t.Name, typeParameters[0].Name);
                             
                             if(!resultJson["error"].IsNullOrEmpty()) {
-                                MethodInfo methodInfo = t.GetMethod("SetException");
-                                methodInfo.Invoke(tcs, new object[] { new ApplicationException(resultJson["error"].Value<string>()) });
-                                
+                                Console.WriteLine("Setting exception...");
+                                var exception = new ApplicationException(resultJson["error"].Value<string>());
+                                Console.WriteLine("Exception is {0}", exception.ToString());
+                                try {
+                                    MethodInfo methodInfo = t.GetMethod("SetException", new[] { typeof(Exception) });
+                                    methodInfo.Invoke(tcs,  new object[] { exception });
+                                } catch (Exception ex) {
+                                    Console.WriteLine("Exception while setting exception: {0}", ex.ToString());
+                                }
+                                Console.WriteLine("Done!");
                             } else {
-                                MethodInfo methodInfo = t.GetMethod("SetResult");
-                                var resultObj = new object[] { JsonConvert.DeserializeObject(resultJson["result"].ToString(), typeParameters[0]) };
-                                methodInfo.Invoke(tcs, resultObj);
+                                try {
+                                    MethodInfo methodInfo = t.GetMethod("SetResult");
+                                    var obj = JsonConvert.DeserializeObject(resultJson["result"].ToString(), typeParameters[0]);
+                                    methodInfo.Invoke(tcs, new object[] { obj });
+                                } catch (Exception ex) {
+                                    MethodInfo methodInfo = t.GetMethod("SetException", new[] { typeof(Exception) });
+                                    methodInfo.Invoke(tcs,  new object[] { ex });
+                                }
                             }
                         }
                     }
@@ -658,7 +675,7 @@ namespace Mit.Dci.Lit
             }, cancellationToken);
         }
 
-        private async Task<TReply> Call<TRequest,TReply>(string method, TRequest request)
+        private Task<TReply> Call<TRequest,TReply>(string method, TRequest request)
         {
             int id = ++_requestNonce;
             var promise = new TaskCompletionSource<TReply>();
@@ -673,9 +690,12 @@ namespace Mit.Dci.Lit
             call.Add(new JProperty("params", parameters));
             Console.WriteLine("Outgoing JSON Call:\r\n==========\r\n{0}\r\n==========\r\n", call.ToString());
             var msg = new ArraySegment<byte>(System.Text.Encoding.UTF8.GetBytes(call.ToString()));
-            await _websocket.SendAsync(msg, WebSocketMessageType.Binary, true, CancellationToken.None);
+            var sendTask = _websocket.SendAsync(msg, WebSocketMessageType.Binary, true, CancellationToken.None);
+            return sendTask.ContinueWith((t) => { return promise.Task; }).Unwrap();
+        }
 
-            return await promise.Task;
+        private static string ByteArrayToString(byte[] bytes) {
+            return BitConverter.ToString(bytes).Replace("-","");
         }
     }
 }
